@@ -1,0 +1,65 @@
+[main]
+project_name = "ASSAMESE_CAIR"
+epochs = 100
+grad_accm_steps = 2
+save_dir = "saved2/"
+pretrained_model = "facebook/wav2vec2-base"
+#cuda_device_ids = "0"
+sr = 16000
+
+
+[training_data]
+path = "data_process.dataset.Dataset_creation"
+    [training_data.args]
+    path = "/wav2vec2_assamese/datasets_NEW/train.csv"
+    sr = 16000
+    
+        [training_data.args.special_tokens]
+        bos_token = "<bos>"
+        eos_token = "<eos>"
+        unk_token = "<unk>"
+        pad_token = "<pad>"
+
+
+    [training_data.dataloader]
+    batch_size = 4
+    pin_memory = true
+    drop_last = true
+
+
+
+[validation_data]
+path = "data_process.dataset.Dataset_creation"
+    [validation_data.args]
+    path = "/wav2vec2_assamese/datasets_NEW/validation.csv"
+    sr = 16000
+
+        [validation_data.args.special_tokens]
+        bos_token = "<bos>"
+        eos_token = "<eos>"
+        unk_token = "<unk>"
+        pad_token = "<pad>"
+
+
+    [validation_data.dataloader]
+    batch_size = 16
+
+[test_data]
+path = "data_process.dataset.Dataset_creation"
+    [test_data.args]
+    path = "/wav2vec2_assamese/datasets_NEW/test.csv"
+    sr = 16000
+
+[pretrained_model]
+path = "/wav2vec2_assamese/pretrained/"
+
+[optimizer]
+lr = 1e-4
+
+
+
+[training]
+path = "training_module.train.Train"
+    [training.args]
+    validation_interval = 100
+    save_max_metric_score = false
