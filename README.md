@@ -1,103 +1,163 @@
 
-# Assamese CAIR - Low Resource Speech Recognition System
+# ASSAMESE_CAIR: Low Resource Speech Recognition
 
-This project implements a low-resource Automatic Speech Recognition (ASR) system using the Wav2Vec 2.0 model for Assamese language. The model is trained on a custom dataset and can transcribe audio files in Assamese. This repository contains the code for training, preprocessing, and evaluating the Wav2Vec 2.0 model, fine-tuned for Assamese language.
+This project implements a low-resource speech recognition system using Wav2Vec2, targeting the Assamese language. It utilizes pre-trained models, fine-tuned on a custom dataset, and evaluates the model's performance using Word Error Rate (WER). The system is designed to be flexible and can easily be extended to other languages and tasks.
 
 ## Project Structure
 
-- `training.py`: Script to train the model with a custom dataset.
-- `structure.toml`: Configuration file to define hyperparameters, paths, and dataset settings.
-- `metric.py`: Metric calculations for evaluating model performance, including Word Error Rate (WER).
-- `progress_bar.py`: Custom progress bar implementation for training and validation loops.
-- `tensorboard.py`: TensorBoard writer for logging training progress.
-- `head_model.py`: Defines the custom head model added to Wav2Vec 2.0.
-- `train.py`: Main training loop and validation logic.
-- `data_collector.py`: Data collator that handles padding and processing of input batches.
-- `torch_dataset.py`: Custom dataset class to load audio files and transcriptions.
-- `module_initialization.py`: Module initialization utility for dynamically loading classes.
-- `features.py`: Helper functions for feature extraction from audio files.
-- `utils/`: Utility scripts for various tasks like logging and progress tracking.
+The project consists of multiple modules that manage various parts of the pipeline, including dataset loading, training, evaluation, and logging. The main components are:
 
-## Prerequisites
+- **Model and Tokenizer**: Wav2Vec2 for feature extraction and CTC for speech-to-text.
+- **Dataset Handling**: Custom dataset class and data collators to handle speech data efficiently.
+- **Training**: Custom training loop with features like gradient accumulation, validation, and checkpoint saving.
+- **Metrics and Logging**: WER evaluation, TensorBoard logging, and a custom progress bar.
 
-Before running the code, ensure you have the following installed:
+## Requirements
 
 - Python 3.7+
-- PyTorch
-- Hugging Face Transformers
-- Torchaudio
+- PyTorch 1.9+
+- Huggingface Transformers
+- torchaudio
 - tqdm
+- evaluate
 - pandas
-- tensorboard
-- Evaluate
 
-You can install the necessary dependencies using pip:
+To install the required dependencies, use:
 
 ```
-pip install torch torchaudio transformers tqdm pandas tensorboard evaluate
+pip install -r requirements.txt
 ```
 
-## Configuration
+## Directory Structure
 
-The `structure.toml` file contains all the configuration settings for the training process. It defines:
+- `training.py`: Main script for training the Wav2Vec2-based model.
+- `structure.toml`: Configuration file containing paths, hyperparameters, and training settings.
+- `metric.py`: Metric calculation, including Word Error Rate (WER).
+- `progress_bar.py`: Custom progress bar for tracking training progress.
+- `tensorboard.py`: TensorBoard logging functionality.
+- `head_model.py`: Defines a custom head for the Wav2Vec2 model.
+- `train.py`: Contains the training loop and validation logic.
+- `data_collector.py`: Data collator for padding and preparing batches.
+- `torch_dataset.py`: Dataset class for loading and processing audio files.
+- `module_initialization.py`: Handles dynamic initialization of modules based on configuration.
+- `features.py`: Utility functions for audio feature extraction.
 
-- `project_name`: Name of the project.
-- `epochs`: Number of epochs for training.
-- `grad_accm_steps`: Gradient accumulation steps for large batches.
-- `save_dir`: Directory where model checkpoints will be saved.
-- `pretrained_model`: Path to the pre-trained Wav2Vec 2.0 model.
-- `sr`: Sampling rate of the audio data.
-- `training_data`: Path to the training dataset and data-related settings.
-- `validation_data`: Path to the validation dataset and validation settings.
-- `test_data`: Path to the test dataset.
-- `optimizer`: Optimizer settings including learning rate.
-- `training`: Settings related to training, like validation intervals.
+## How to Run
 
-## Training
+### Training the Model
 
-To train the model, run the following command:
+To start training, run the following command:
 
 ```
-python training.py --structure path_to_structure.toml
+python training.py -s path_to_structure_file
 ```
 
-This will start the training process using the configurations provided in the `structure.toml` file.
+This will initiate training with the configuration specified in the provided TOML file.
 
-### Training Configuration
+- `-s`: Path to the `structure.toml` file containing the configuration.
 
-The training process includes:
+### Configuration (`structure.toml`)
 
-- Loading the dataset using the `torch_dataset.py` class.
-- Initializing the model using `Wav2Vec2ForCTC` and a custom head defined in `head_model.py`.
-- Using the `Trainer` class in `train.py` to handle training and validation.
-- Logging metrics such as loss and WER (Word Error Rate) to TensorBoard and updating progress with `progress_bar.py`.
+The `structure.toml` file contains all the necessary paths and parameters required for training. The main sections include:
 
-### Checkpoints
+- **Main**: Defines the project name, number of epochs, gradient accumulation steps, save directories, and the sample rate.
+- **Training Data**: Specifies the path to the training dataset and the special tokens for the tokenizer.
+- **Validation Data**: Specifies the path to the validation dataset.
+- **Test Data**: Defines the test data for evaluation.
+- **Pretrained Model**: Specifies the path to the pretrained Wav2Vec2 model.
+- **Optimizer**: Defines the learning rate for the optimizer.
+- **Training**: Specifies parameters like validation intervals and saving conditions.
 
-The model will save checkpoints during training to the `save_dir` specified in `structure.toml`. The best model is saved as `best_model.tar`.
+### Example Structure:
 
-## Evaluation
+```toml
+[main]
+project_name = "ASSAMESE_CAIR"
+epochs = 100
+grad_accm_steps = 2
+save_dir = "saved/"
+pretrained_model = "facebook/wav2vec2-base"
+sr = 16000
 
-After training, you can evaluate the model using the test set. The model uses the WER metric for evaluation, which is calculated using the `metric.py` class.
+[training_data]
+path = "data_process.dataset.Dataset_creation"
+    [training_data.args]
+    path = "/wav2vec2_assamese/datasets_NEW/train.csv"
+    sr = 16000
+    
+        [training_data.args.special_tokens]
+        bos_token = "<bos>"
+        eos_token = "<eos>"
+        unk_token = "<unk>"
+        pad_token = "<pad>"
+    [training_data.dataloader]
+    batch_size = 4
+    pin_memory = true
+    drop_last = true
 
-## Customization
+[validation_data]
+path = "data_process.dataset.Dataset_creation"
+    [validation_data.args]
+    path = "/wav2vec2_assamese/datasets_NEW/validation.csv"
+    sr = 16000
 
-You can modify the following to fit your specific use case:
+        [validation_data.args.special_tokens]
+        bos_token = "<bos>"
+        eos_token = "<eos>"
+        unk_token = "<unk>"
+        pad_token = "<pad>"
+    [validation_data.dataloader]
+    batch_size = 16
 
-- **Dataset**: Provide your own dataset in the `structure.toml` file under the `training_data`, `validation_data`, and `test_data` sections.
-- **Model**: You can use any pre-trained model available in Hugging Face’s model hub by specifying it in the `pretrained_model` section.
+[test_data]
+path = "data_process.dataset.Dataset_creation"
+    [test_data.args]
+    path = "/wav2vec2_assamese/datasets_NEW/test.csv"
+    sr = 16000
 
+[pretrained_model]
+path = "/wav2vec2_assamese/pretrained/"
 
-## Acknowledgments
+[optimizer]
+lr = 1e-4
 
-- The model is based on the Wav2Vec 2.0 architecture by Facebook AI.
-- Special thanks to Hugging Face for providing the transformers library.
+[training]
+path = "training_module.train.Train"
+    [training.args]
+    validation_interval = 100
+    save_max_metric_score = false
 ```
 
-2. **Create the file**:
-   - Open any text editor (e.g., Notepad, VSCode, Sublime Text).
-   - Paste the content above into the editor.
-   - Save the file as `README.md`.
+## Model Training Process
 
-3. **Optionally, you can upload it to a platform like GitHub**:
-   If you want to share it or use it in a repository, upload this `README.md` file to your repository on GitHub.
+### Dataset
+
+The model expects a CSV file containing columns for the `audio_path` and `transcription` (text). The audio files should be in WAV format. The dataset is loaded and processed using the `Dataset` class, which extracts features from the audio files, applies the necessary transformations, and prepares them for training.
+
+### Training Loop
+
+The model is trained using the `Train` class, which handles the entire training loop:
+
+1. **Forward Pass**: The model processes the input features and generates predictions.
+2. **Loss Calculation**: The CTC loss is calculated and backpropagated.
+3. **Optimizer Step**: The model weights are updated based on the gradients.
+4. **Validation**: The model is evaluated on the validation dataset at specified intervals.
+5. **Checkpointing**: Model checkpoints are saved after each epoch, and the best model is saved based on the validation WER.
+
+### Metrics
+
+The primary evaluation metric is **Word Error Rate (WER)**, which measures the accuracy of the transcriptions predicted by the model.
+
+## Logging
+
+Training progress and metrics are logged using **TensorBoard**. A custom progress bar is displayed during training, showing the current training loss, learning rate, and WER.
+
+To visualize the logs, run:
+
+```bash
+tensorboard --logdir=path_to_log_dir
+```
+
+## Conclusion
+
+This project provides a flexible and extendable framework for training speech recognition models using Wav2Vec2. By modifying the configuration file, you can fine-tune the model on your own datasets and evaluate its performance.
